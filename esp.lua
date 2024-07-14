@@ -66,6 +66,13 @@ ESPTab:AddToggle({
     end
 })
 
+OrionLib:MakeNotification({
+    Name = "ESP Loaded",
+    Content = "Made by Yazz aka y7.1r",
+    Image = "rbxassetid://4483345998",
+    Time = 5
+})
+
 ESPTab:AddToggle({
     Name = "Show Foot Line",
     Default = ShowFootLine,
