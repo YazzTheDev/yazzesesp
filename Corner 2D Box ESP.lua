@@ -4,7 +4,10 @@ local Settings = {
     Box_Thickness = 2,
     Team_Check = false,
     Team_Color = true,
-    Autothickness = true
+    Autothickness = false,
+    Health_Bar = true,
+    Health_Bar_Thickness = 2,
+    Health_Bar_Offset = 5 -- Offset below the box
 }
 
 --Locals
@@ -46,6 +49,7 @@ local function Rainbow(lib, delay)
     end
     Rainbow(lib)
 end
+
 --Main Draw Function
 local function Main(plr)
     repeat wait() until plr.Character ~= nil and plr.Character:FindFirstChild("Humanoid") ~= nil
@@ -58,15 +62,15 @@ local function Main(plr)
     local Library = {
         TL1 = NewLine(Settings.Box_Color, Settings.Box_Thickness),
         TL2 = NewLine(Settings.Box_Color, Settings.Box_Thickness),
-
         TR1 = NewLine(Settings.Box_Color, Settings.Box_Thickness),
         TR2 = NewLine(Settings.Box_Color, Settings.Box_Thickness),
-
         BL1 = NewLine(Settings.Box_Color, Settings.Box_Thickness),
         BL2 = NewLine(Settings.Box_Color, Settings.Box_Thickness),
-
         BR1 = NewLine(Settings.Box_Color, Settings.Box_Thickness),
-        BR2 = NewLine(Settings.Box_Color, Settings.Box_Thickness)
+        BR2 = NewLine(Settings.Box_Color, Settings.Box_Thickness),
+        -- New health bar lines
+        HealthBarOutline = NewLine(Color3.fromRGB(0, 0, 0), Settings.Health_Bar_Thickness + 2),
+        HealthBarFill = NewLine(Color3.fromRGB(255, 0, 0), Settings.Health_Bar_Thickness)
     }
     coroutine.wrap(Rainbow)(Library, 0.15)
     local oripart = Instance.new("Part")
@@ -140,6 +144,30 @@ local function Main(plr)
                             x.Thickness = Settings.Box_Thickness
                         end
                     end
+
+                    -- Health Bar
+                    if Settings.Health_Bar then
+                        local HealthPercent = Hum.Humanoid.Health / Hum.Humanoid.MaxHealth
+                        local BarWidth = math.abs(BR.X - BL.X) -- Width of the player
+                        local HealthBarWidth = BarWidth * HealthPercent
+                        local BarPosition = Vector2.new(BL.X, BR.Y + Settings.Health_Bar_Offset)
+
+                        Library.HealthBarOutline.From = BarPosition
+                        Library.HealthBarOutline.To = Vector2.new(BR.X, BR.Y + Settings.Health_Bar_Offset)
+                        Library.HealthBarOutline.Visible = true
+
+                        Library.HealthBarFill.From = BarPosition
+                        Library.HealthBarFill.To = Vector2.new(BarPosition.X + HealthBarWidth, BR.Y + Settings.Health_Bar_Offset)
+                        Library.HealthBarFill.Visible = true
+
+                        -- Color the health bar based on health percentage
+                        local HealthColor = Color3.fromRGB(255 * (1 - HealthPercent), 255 * HealthPercent, 0)
+                        Library.HealthBarFill.Color = HealthColor
+                    else
+                        Library.HealthBarOutline.Visible = false
+                        Library.HealthBarFill.Visible = false
+                    end
+
                 else 
                     Vis(Library, false)
                 end
@@ -148,8 +176,8 @@ local function Main(plr)
                 if game:GetService("Players"):FindFirstChild(plr.Name) == nil then
                     for i, v in pairs(Library) do
                         v:Remove()
-                        oripart:Destroy()
                     end
+                    oripart:Destroy()
                     c:Disconnect()
                 end
             end
