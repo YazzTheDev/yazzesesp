@@ -1,0 +1,101 @@
+local function loadTracers()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+
+    local camera = workspace.CurrentCamera
+    local localPlayer = Players.LocalPlayer
+
+    -- Define the line thickness as a variable
+    local LINE_THICKNESS = 2
+
+    -- Table to store lines for each player
+    local playerLines = {}
+
+    -- Variable to store the RenderStepped connection
+    local renderSteppedConnection
+
+    -- Function to get a player's team color or default to white
+    local function getPlayerColor(player)
+        if player.Team then
+            return player.Team.TeamColor.Color
+        else
+            return Color3.new(1, 1, 1)
+        end
+    end
+
+    -- Function to create a new line
+    local function createLine()
+        local line = Drawing.new("Line")
+        line.Thickness = LINE_THICKNESS
+        line.Visible = false
+        return line
+    end
+
+    -- Function to update lines
+    local function updateLines()
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local line = playerLines[player]
+                if not line then
+                    line = createLine()
+                    playerLines[player] = line
+                end
+
+                local rootPart = player.Character.HumanoidRootPart
+                local footPosition = rootPart.Position - Vector3.new(0, 3, 0)  -- Adjust this offset to match the character's feet
+                local screenPosition, isOnScreen = camera:WorldToViewportPoint(footPosition)
+
+                if isOnScreen then
+                    local screenSize = camera.ViewportSize
+                    local startPosition = Vector2.new(screenSize.X / 2, screenSize.Y)
+                    local endPosition = Vector2.new(screenPosition.X, screenPosition.Y)
+
+                    line.From = startPosition
+                    line.To = endPosition
+                    line.Color = getPlayerColor(player)
+                    line.Visible = true
+                else
+                    line.Visible = false
+                end
+            end
+        end
+    end
+
+    -- Clean up lines for players who have left
+    local function cleanUpLines()
+        for player, line in pairs(playerLines) do
+            if not Players:GetPlayerFromCharacter(player.Character) then
+                line:Remove()
+                playerLines[player] = nil
+            end
+        end
+    end
+
+    -- Function to unload the script
+    local function unloadScript()
+        -- Disconnect the RenderStepped connection if it exists
+        if renderSteppedConnection then
+            renderSteppedConnection:Disconnect()
+        end
+
+        -- Remove all drawn lines
+        for _, line in pairs(playerLines) do
+            line:Remove()
+        end
+
+        -- Clear the playerLines table
+        table.clear(playerLines)
+
+        print("Script unloaded and lines removed.")
+    end
+
+    -- Connect updateLines function to RenderStepped event
+    renderSteppedConnection = RunService.RenderStepped:Connect(function()
+        updateLines()
+        cleanUpLines()
+    end)
+
+    print("Player ESP script loaded.")
+end
+
+loadTracers()
